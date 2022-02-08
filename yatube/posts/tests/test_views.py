@@ -311,7 +311,7 @@ class FollowTest(TestCase):
             author=self.author,
             text='текст'
         )
-       
+
     def test_user_can_following(self):
         """проверяем что можно подписаться"""
         self.visitor_client.get(reverse('posts:profile_follow', kwargs={
