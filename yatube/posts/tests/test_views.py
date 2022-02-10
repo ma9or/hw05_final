@@ -1,15 +1,17 @@
 import shutil
 import tempfile
 
-from django.contrib.auth import get_user_model
+from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django import forms
+
 from posts.views import NUM_POST
-from ..models import Group, Post, Follow
+
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -262,6 +264,18 @@ class PaginatorViewsTest(TestCase):
         self.authorized_client.force_login(PaginatorViewsTest.user)
         cache.clear()
 
+    def get_first_page_contains_ten_records(self, client, page_names):
+        for url in page_names:
+            with self.subTest(url=url):
+                response = client.get(url)
+                self.assertEqual(len(response.context['page_obj']), NUM_POST)
+
+    def get_second_page_contains_three_records(self, client, page_names):
+        for url in page_names:
+            with self.subTest(url=url):
+                response = client.get(url + '?page=2')
+                self.assertEqual(len(response.context['page_obj']), 3)
+
     def test_paginator_pages(self):
         pages_names = [
             reverse('posts:index'),
@@ -272,26 +286,10 @@ class PaginatorViewsTest(TestCase):
                                              PaginatorViewsTest.
                                              user.username})
         ]
-        get_first_page_contains_ten_records(self,
-                                            self.authorized_client,
-                                            pages_names)
-        get_second_page_contains_three_records(self,
-                                               self.authorized_client,
-                                               pages_names)
-
-
-def get_first_page_contains_ten_records(self, client, page_names):
-    for url in page_names:
-        with self.subTest(url=url):
-            response = client.get(url)
-            self.assertEqual(len(response.context['page_obj']), NUM_POST)
-
-
-def get_second_page_contains_three_records(self, client, page_names):
-    for url in page_names:
-        with self.subTest(url=url):
-            response = client.get(url + '?page=2')
-            self.assertEqual(len(response.context['page_obj']), 3)
+        self.get_first_page_contains_ten_records(self.authorized_client,
+                                                 pages_names)
+        self.get_second_page_contains_three_records(self.authorized_client,
+                                                    pages_names)
 
 
 class FollowTest(TestCase):
@@ -314,17 +312,20 @@ class FollowTest(TestCase):
 
     def test_user_can_following(self):
         """проверяем что можно подписаться"""
+        follow_count = Follow.objects.count()
         self.visitor_client.get(reverse('posts:profile_follow', kwargs={
             'username': self.author.username,
         }))
-        self.assertEqual(Follow.objects.count(), 1)
+        self.assertEqual(Follow.objects.count(), follow_count + 1)
 
     def test_user_can_unfollowed(self):
         """проверяем что можно отписаться"""
+        follow_count = Follow.objects.count()
+        follow_count1 = follow_count + 1
         self.visitor_client.get(reverse('posts:profile_unfollow', kwargs={
             'username': self.author.username,
         }))
-        self.assertEqual(Follow.objects.count(), 0)
+        self.assertEqual(Follow.objects.count(), follow_count1 - 1)
 
     def test_follow_page_for_follower(self):
         """Пост появляется на странице того, кто подписан"""

@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from posts.models import NUM_OF_CHAR
+
 from ..models import Group, Post
 
 User = get_user_model()
@@ -26,4 +28,4 @@ class PostModelTest(TestCase):
         post = PostModelTest.post
         group = PostModelTest.group
         self.assertEqual(group.title, str(group))
-        self.assertEqual(post.text[:15], str(post))
+        self.assertEqual(post.text[:NUM_OF_CHAR], str(post))
