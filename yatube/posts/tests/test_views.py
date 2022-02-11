@@ -310,22 +310,16 @@ class FollowTest(TestCase):
             text='текст'
         )
 
-    def test_user_can_following(self):
-        """проверяем что можно подписаться"""
+    def test_user_can_following_and_unfollowing(self):
+        """Пользователь может подписаться или отписаться"""
         follow_count = Follow.objects.count()
-        self.visitor_client.get(reverse('posts:profile_follow', kwargs={
-            'username': self.author.username,
-        }))
+        self.visitor_client.get(reverse('posts:profile_follow',
+                                kwargs={'username': self.author.username}))
         self.assertEqual(Follow.objects.count(), follow_count + 1)
-
-    def test_user_can_unfollowed(self):
-        """проверяем что можно отписаться"""
         follow_count = Follow.objects.count()
-        follow_count1 = follow_count + 1
-        self.visitor_client.get(reverse('posts:profile_unfollow', kwargs={
-            'username': self.author.username,
-        }))
-        self.assertEqual(Follow.objects.count(), follow_count1 - 1)
+        self.visitor_client.get(reverse('posts:profile_unfollow',
+                                kwargs={'username': self.author.username}))
+        self.assertEqual(Follow.objects.count(), follow_count - 1)
 
     def test_follow_page_for_follower(self):
         """Пост появляется на странице того, кто подписан"""
